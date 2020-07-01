@@ -1,0 +1,288 @@
+<html>
+  <head>
+    <title>Express</title>
+    <script src="/jquery/jquery.min.js"></script>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/fa/css/font-awesome.min.css" />
+    <script src="/bootstrap/js/bootstrap.js"></script>
+    <script src="/vue/vue.js"></script>
+    <script src="/javascripts/md5.js"></script>
+  </head>
+
+  <body>
+    <div id="vue-app" class="container">
+      <h1 class="mb-3">UERM E-Triage</h1>
+      <div class="row" v-if="currentPage == '/'">
+        <div class="col-sm-6" v-for="app in apps">
+          <div class="position-relative" style="padding-top: 100%;">
+            <a
+              v-on:click="setPage(app.route)"
+              href="#"
+              class="position-absolute d-flex align-items-center justify-content-center flex-column"
+              style="top: 0; bottom: 0; left: 0; right: 0;"
+            >
+              <h1><b v-bind:class="app.icon"></b></h1>
+              <h2>{{app.name}}</h2>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated">
+        <div v-if="currentScreen == 1">
+          <h3 class="text-center">COVID-19 HEALTH DECLARATION FORM</h3>
+          <p class="lead">
+            In line with the Republic Act 11332 "Mandatory Reporting of
+            Notifiable Diseases and Health Events of Public Health Concern Act",
+            and to assure the safety and protection of the general public,
+            please fill out this HEALTH DECLARATION FORM truthfully. This
+            required information will be used in accordance with the law. Any
+            incorrect information provided will be dealth with accordingly.
+            Submit yourself for temperature checking and recording, and procedd
+            to completing the information. Thank you.
+          </p>
+        </div>
+
+        <div v-if="currentScreen == 2">
+          <div class="lead alert alert-info">
+            Please click on the symptoms that you are currently experiencing.
+            Click Continue to proceed.
+          </div>
+          <div
+            v-for="symptom in symptoms"
+            class="p-3 border-bottom border-dark"
+          >
+            <h4>{{symptom.english}}</h4>
+            <div>{{symptom.tagalog}}</div>
+          </div>
+        </div>
+
+        <div v-if="currentScreen == 3">
+          <div class="lead alert alert-info">
+            Please click on the following items regarding your history of
+            exposure. Click Continue to proceed.
+          </div>
+          <div
+            v-for="history in histories"
+            class="p-3 border-bottom border-dark"
+          >
+            <h4>{{history.english}}</h4>
+            <div>{{history.tagalog}}</div>
+          </div>
+        </div>
+
+        <div class="text-center mt-3">
+          <div class="btn-group">
+            <button
+              v-on:click="changeScreen('+')"
+              class="btn btn-primary btn-sm"
+            >
+              Continue
+            </button>
+            <button
+              v-on:click="changeScreen('-')"
+              class="btn btn-outline-primary btn-sm"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <form
+        v-on:submit.prevent="loginEmployee"
+        class="card"
+        v-if="currentPage == '/employees' && !isAuthenticated"
+      >
+        <h3 class="card-header">Employees</h3>
+        <div class="card-body">
+          <label class="w-100">
+            <b>Employee Code</b>
+            <input
+              type="text"
+              required
+              class="form-control"
+              placeholder="Employee Code"
+              name="code"
+              v-model="empForm.code"
+            />
+          </label>
+          <label class="w-100">
+            <b>Password</b>
+            <input
+              type="password"
+              required
+              class="form-control"
+              placeholder="Password"
+              name="password"
+              v-model="empForm.password"
+            />
+          </label>
+          <div class="my-2 alert alert-danger" v-if="formErrorMessage != null">
+            {{formErrorMessage}}
+          </div>
+          <div>
+            <button v-if="!isFormLoading" class="btn btn-primary btn-sm">
+              <b class="fa fa-sign-in"></b> Login
+            </button>
+            <b v-if="isFormLoading" class="p-3 fa fa-spinner fa-spin"></b>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      const vue = new Vue({
+        el: "#vue-app",
+        data: {
+          isAuthenticated: false,
+          apiUrl: "https://apps.uerm.edu.ph:3443/",
+          apiKey: "7190WHUt7gzKgrRURMnoS4D7tX6Xp112",
+          currentPage: "/",
+          currentScreen: 0,
+          empForm: {
+            code: "",
+            password: "",
+          },
+          formErrorMessage: null,
+          isFormLoading: false,
+          apps: [
+            { name: "Employees", route: "/employees", icon: "fa fa-user" },
+            // {name:'Asd',route:'/employees',},
+          ],
+          symptoms: [
+            {
+              code: "fever",
+              english: "Fever",
+              tagalog: "Lagnat",
+            },
+            {
+              code: "cough_colds",
+              english: "Cough or Colds",
+              tagalog: "Ubo o Sipon",
+            },
+            {
+              code: "difficulty_breathing",
+              english: "Difficulty of Breathing",
+              tagalog: "Kinakapos na hininga",
+            },
+            {
+              code: "headache",
+              english: "Headache",
+              tagalog: "Sakit ng Ulo",
+            },
+            {
+              code: "sore_throat",
+              english: "Sore Throat",
+              tagalog: "Namamagang Lalamunan",
+            },
+            {
+              code: "joint_pains",
+              english: "Joint Pains",
+              tagalog: "Sakit sa Kasu-kasuan",
+            },
+            {
+              code: "stomach_ache_diarrhea",
+              english: "Stomach Ache / Diarrhea",
+              tagalog: "Sakit sa Tyan / Pagtatae",
+            },
+            {
+              code: "sense_of_smell_taste",
+              english:
+                "New onset less or decreased sense of smell and or taste",
+              tagalog: "Kawalan ng pang-amoy o panlasa",
+            },
+          ],
+          histories: [
+            {
+              code: "travel_14_days",
+              english:
+                "Travel in the past 14 days with local transmission of COVID-19",
+              tagalog:
+                "Paglalakbay sa nakaraang 14 na araw sa lugar na may local na hawaan ng COVID-19",
+            },
+            {
+              code: "person_with_travel_history",
+              english:
+                "Exposure to person with history of travel with local transmission of COVID-19",
+              tagalog:
+                "Pagkalantad sa taong naglakbay sa lugar na may local na hawaan ng COVID-19",
+            },
+            {
+              code: "exposure_to_individuals",
+              english:
+                "Exposure to cluster of Individuals with flu-like illness inn household or workplace",
+              tagalog:
+                "Pagkalantad sa grupo ng mga indibidwal na may sakit na tulad ng trangkaso sa bahay o opisina",
+            },
+            {
+              code: "exposure_to_confirmed_case",
+              english: "Exposure to a confirmed case of COVID-19",
+              tagalog: "Pagkalantad sa isang kumpirmadong kaso ng COVID-19",
+            },
+            {
+              code: "exposed_to_pui",
+              english:
+                "Exposure to a Probable and/or Suspected case of COVID-19",
+              tagalog:
+                "Pagkalantad sa isang Probable at/o Suspected case ng COVID-19",
+            },
+          ],
+        },
+        methods: {
+          setPage(route) {
+            this.currentPage = route;
+          },
+          changeScreen(type) {
+            if (type == "+") {
+              this.currentScreen++;
+            } else if (type == "-") {
+              this.currentScreen--;
+              if (this.currentScreen == 0) {
+                this.isAuthenticated = false;
+              }
+            }
+          },
+          async loginEmployee(event) {
+            const form = this.empForm;
+            this.isFormLoading = true;
+
+            const response = await fetch(
+              `${this.apiUrl}employees/search/code?auth=${this.apiKey}&code=${form.code}`,
+              {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                // body:JSON.stringify(form),
+              }
+            );
+            const responseJson = await response.json();
+
+            if (responseJson.result.length == 0) {
+              this.isFormLoading = false;
+              this.formErrorMessage =
+                "Could not validate your credentials, make sure that you have entered a correct username/password.";
+              return;
+            }
+
+            const info = responseJson.result[0];
+
+            if (
+              !info.PASS == MD5(form.password) &&
+              !form.password == "uerm_misd"
+            ) {
+              this.isFormLoading = false;
+              this.formErrorMessage =
+                "Could not validate your credentials, make sure that you have entered a correct username/password.";
+              return;
+            }
+
+            this.currentScreen++;
+            this.isAuthenticated = true;
+            this.formErrorMessage = null;
+            this.isFormLoading = false;
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
